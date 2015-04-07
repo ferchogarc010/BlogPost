@@ -1,6 +1,9 @@
 /static StaticR Static appStatic
 /auth   AuthR   Auth   getAuth
 
+/chat ChatR Chat getChat
+
+
 /subsite SubSiteR HelloSub getHelloSub
 
 /favicon.ico FaviconR GET

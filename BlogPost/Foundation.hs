@@ -11,7 +11,9 @@ import Yesod.Core.Types     (Logger)
 import Yesod.Auth
 import Yesod.Auth.Email     (authEmail)
 import HelloSub
-
+import Chat
+import Chat.Data
+import Control.Concurrent.Chan (newChan)
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
 -- starts running, such as database connections. Every handler will have
@@ -23,6 +25,7 @@ data App = App
     , appHttpManager :: Manager
     , appLogger      :: Logger
     , getHelloSub    :: HelloSub
+    , getChat        :: Chat
     }
 
 instance HasHttpManager App where
@@ -69,6 +72,7 @@ instance Yesod App where
             addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"
             addStylesheet $ StaticR css_bootstrap_css
             $(widgetFile "default-layout")
+            chatWidget ChatR
         withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
 
     -- The page to be redirected to when authentication is required.
@@ -149,6 +153,18 @@ instance YesodAuthPersist App
 -- achieve customized and internationalized form validation messages.
 instance RenderMessage App FormMessage where
     renderMessage _ _ = defaultFormMessage
+
+instance YesodChat App where
+    getUserName = do
+        muid <- maybeAuth
+        case muid of
+            Nothing -> do
+                setMessage "Not logged in"
+                redirect $ AuthR LoginR
+            Just (Entity key user) -> return $ pack . takeWhile (/= '@') . unpack $ userIdent user
+    isLoggedIn = do
+        ma <- maybeAuthId
+        return $ maybe False (const True) ma
 
 -- Note: Some functionality previously present in the scaffolding has been
 -- moved to documentation in the Wiki. Following are some hopefully helpful
